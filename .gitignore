@@ -1,0 +1,4 @@
+watched/
+quarantine/
+alerts.jsonl
+__pycache__/

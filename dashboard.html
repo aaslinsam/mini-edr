@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Mini-EDR Console</title>
+<style>
+body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#0f1420;color:#e4e8f0}
+header{padding:16px 24px;background:#161d2e;border-bottom:1px solid #26304a;display:flex;align-items:center;gap:12px}
+header h1{margin:0;font-size:20px}.dot{width:10px;height:10px;border-radius:50%;background:#2ecc71;box-shadow:0 0 8px #2ecc71}
+.cards{display:flex;gap:12px;padding:16px 24px;flex-wrap:wrap}
+.card{background:#161d2e;border:1px solid #26304a;border-radius:8px;padding:12px 18px;min-width:140px}
+.card b{display:block;font-size:26px}.card span{color:#8a94ad;font-size:12px;text-transform:uppercase}
+table{width:calc(100% - 48px);margin:0 24px 24px;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid #26304a;vertical-align:top}th{color:#8a94ad}
+.sev{padding:2px 8px;border-radius:4px;font-weight:600;font-size:11px}
+.CRITICAL{background:#c0392b}.HIGH{background:#e67e22}.MEDIUM{background:#b7950b}.LOW{background:#555}
+.act{color:#2ecc71;font-weight:600}.det{color:#aab3c8;word-break:break-all;max-width:600px}
+.new{animation:f 2s}@keyframes f{from{background:#3a2a10}to{background:transparent}}
+</style></head><body>
+<header><div class="dot"></div><h1>Mini-EDR &mdash; Security Console</h1><small id="up" style="color:#8a94ad;margin-left:auto"></small></header>
+<div class="cards" id="cards"></div>
+<table><thead><tr><th>Time</th><th>Severity</th><th>Rule</th><th>MITRE</th><th>Description</th><th>Response</th><th>Details</th></tr></thead><tbody id="rows"></tbody></table>
+<script>
+let last=0;
+async function load(){
+  const r=await fetch('/api');const d=await r.json();const s=d.stats,a=d.alerts;
+  const crit=a.filter(x=>x.severity==='CRITICAL').length;
+  document.getElementById('up').textContent='Agent running since '+s.started;
+  document.getElementById('cards').innerHTML=[['Total alerts',a.length],['Critical',crit],['Processes scanned',s.processes_scanned],['Files scanned',s.files_scanned],['Processes killed',s.killed],['Files quarantined',s.quarantined]]
+    .map(([k,v])=>`<div class="card"><b>${v}</b><span>${k}</span></div>`).join('');
+  const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  document.getElementById('rows').innerHTML=a.map((x,i)=>`<tr class="${i<a.length-last?'new':''}"><td>${x.time}</td><td><span class="sev ${x.severity}">${x.severity}</span></td><td>${x.rule}</td><td>${x.mitre}</td><td>${esc(x.description)}</td><td class="${x.action!=='logged'?'act':''}">${esc(x.action)}</td><td class="det">${esc(x.details)}</td></tr>`).join('');
+  last=a.length;
+}
+load();setInterval(load,2000);
+</script></body></html>
